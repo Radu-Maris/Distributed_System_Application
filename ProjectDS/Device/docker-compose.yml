@@ -1,0 +1,57 @@
+version: '3.3'
+
+services:
+
+  api_devices_service:
+    build: .
+    restart: always
+    networks:
+      - backend1
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://devices_db:5432/devices
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    depends_on:
+      - devices_db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-devices.rule=Host(`devices.localhost`)"
+      - "traefik.http.routers.api-devices.entrypoints=web"
+      - "traefik.http.services.api-devices.loadbalancer.server.port=8081"
+    volumes:
+      - .m2:/root/.m2
+    deploy:
+      replicas: 2
+
+  devices_db:
+    container_name: devices_db
+    image: 'postgres:16-alpine'
+    ports:
+      - "1235:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=devices
+    volumes:
+      - C:\volumes\sd\postgres\devices:/var/lib/postgresql/data/
+    networks:
+      - backend1
+
+  reverse-proxy:
+    image: traefik:v3.2
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.traefik.address=:8085
+    ports:
+      - "88:80" # Web traffic
+      - "8085:8085" # Traefik dashboard
+    networks:
+      - backend1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  backend1:
+    driver: bridge

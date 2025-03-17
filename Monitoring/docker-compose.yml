@@ -1,0 +1,56 @@
+version: '3.3'
+
+services:
+
+  api_monitoring_service:
+    build: .
+    restart: always
+    networks:
+      - backendMonitoring
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://monitor_db:5432/monitoring
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    depends_on:
+      - monitor_db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-monitoring.rule=Host(`monitoring.localhost`)"
+      - "traefik.http.routers.api-monitoring.entrypoints=web"
+      - "traefik.http.services.api-monitoring.loadbalancer.server.port=8083"
+    volumes:
+#      - .m2:/root/.m2
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  reverse-proxy:
+    image: traefik:v3.2
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.traefik.address=:8084
+    ports:
+      - "82:80" # Web traffic
+      - "8084:8084"
+    networks:
+      - backendMonitoring
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+
+  monitor_db:
+    container_name: monitor_db
+    image: 'postgres:16-alpine'
+    ports:
+      - "1236:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=monitoring
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql/data/
+    networks:
+      - backendMonitoring
+
+networks:
+  backendMonitoring:

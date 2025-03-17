@@ -1,0 +1,12 @@
+version: '3.4'
+
+services:
+  my-react-vite-app:
+    image: my-react-vite-app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3000:80

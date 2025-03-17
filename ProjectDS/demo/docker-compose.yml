@@ -1,0 +1,58 @@
+version: '3.3'
+
+services:
+
+  api_user_service:
+    build: .
+    restart: always
+    networks:
+      - backend
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://users_db:5432/users
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    depends_on:
+      - users_db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-user.rule=Host(`user.localhost`)"
+      - "traefik.http.routers.api-user.entrypoints=web"
+      - "traefik.http.services.api-user.loadbalancer.server.port=8080"
+
+    deploy:
+      replicas: 2
+    volumes:
+#      - .m2:/root/.m2
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  users_db:
+    container_name: users_db
+    image: 'postgres:16-alpine'
+    ports:
+      - "1234:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=users
+    volumes:
+      - /c/volumes/sd/postgres/users:/var/lib/postgresql/data/
+    networks:
+      - backend
+
+  reverse-proxy:
+    image: traefik:v3.2
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.traefik.address=:8080
+    ports:
+      - "81:80"
+      - "8081:8080"
+    networks:
+      - backend
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  backend:

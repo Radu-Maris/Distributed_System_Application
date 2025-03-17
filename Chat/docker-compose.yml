@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  chat:
+    build: .
+    container_name: chat-app
+    ports:
+      - "8083:8083"
+    environment:
+      - DB_IP=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres_password
+      - DB_DBNAME=communication-db
+    depends_on:
+      - db
+    networks:
+      - chat-network
+
+  db:
+    image: postgres:latest
+    container_name: chat-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres_password
+      - POSTGRES_DB=communication-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - chat-db-data:/var/lib/postgresql/data
+    networks:
+      - chat-network
+
+networks:
+  chat-network:
+    driver: bridge
+
+volumes:
+  chat-db-data:
+    driver: local

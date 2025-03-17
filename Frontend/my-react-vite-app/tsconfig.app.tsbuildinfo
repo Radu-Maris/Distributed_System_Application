@@ -1,0 +1,1 @@
+{"root":["./src/admin.tsx","./src/adminviewusers.tsx","./src/app.tsx","./src/device.tsx","./src/login.tsx","./src/protectedroute.tsx","./src/register.tsx","./src/user.tsx","./src/userview.tsx","./src/viewalldevices.tsx","./src/viewdevicesofuser.tsx","./src/main.tsx","./src/vite-env.d.ts"],"version":"5.6.3"}
